@@ -1,0 +1,395 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var culture = new System.Globalization.CultureInfo("de-CH");
+    var w = Model.Weather;
+    var todayForecast = w.Forecast.FirstOrDefault();
+}
+
+<aside class="rd-sidebar">
+    <a href="/" class="rd-logo">
+        <div class="rd-logo-icon">RD</div>
+        <div>
+            <div class="rd-logo-text">Rion Daily</div>
+            <div class="rd-logo-sub">Dein Morgen-Cockpit</div>
+        </div>
+    </a>
+    <ul class="rd-nav">
+        <li class="rd-nav-item"><a href="#cockpit" class="rd-nav-link active"><i class="bi bi-grid-1x2-fill"></i> Cockpit</a></li>
+        <li class="rd-nav-item"><a href="#heute" class="rd-nav-link"><i class="bi bi-lightning"></i> Heute wichtig</a></li>
+        <li class="rd-nav-item"><a href="#top5" class="rd-nav-link"><i class="bi bi-lightning-fill"></i> Top 5</a></li>
+        <li class="rd-nav-item"><a href="#aktie" class="rd-nav-link"><i class="bi bi-briefcase"></i> Aktie</a></li>
+        <li class="rd-nav-item"><a href="#unternehmen" class="rd-nav-link"><i class="bi bi-building"></i> Unternehmen</a></li>
+        <li class="rd-nav-item"><a href="#begriff" class="rd-nav-link"><i class="bi bi-book"></i> Begriff</a></li>
+        <li class="rd-nav-item"><a href="#unternehmer" class="rd-nav-link"><i class="bi bi-rocket"></i> Unternehmer</a></li>
+        <li class="rd-nav-item"><a href="#devtech" class="rd-nav-link"><i class="bi bi-code-slash"></i> Dev & Web</a></li>
+        <li class="rd-nav-item"><a href="#shortcuts" class="rd-nav-link"><i class="bi bi-grid"></i> Schnellzugriff</a></li>
+        <li class="rd-nav-item"><a href="#woche" class="rd-nav-link"><i class="bi bi-calendar-week"></i> Woche</a></li>
+        <li class="rd-nav-item"><a href="#maerkte" class="rd-nav-link"><i class="bi bi-graph-up"></i> Märkte</a></li>
+        <li class="rd-nav-item"><a href="#politik" class="rd-nav-link"><i class="bi bi-bank"></i> Politik</a></li>
+        <li class="rd-nav-item"><a href="#tech" class="rd-nav-link"><i class="bi bi-cpu"></i> AI & Tech</a></li>
+        <li class="rd-nav-item"><a href="#f1" class="rd-nav-link"><i class="bi bi-speedometer2"></i> Formula 1</a></li>
+        <li class="rd-nav-item"><a href="#investieren" class="rd-nav-link"><i class="bi bi-mortarboard"></i> Lernen</a></li>
+    </ul>
+</aside>
+
+<main class="rd-main">
+    <header class="rd-header">
+        <div>
+            <h1 class="rd-greeting">@Model.Greeting</h1>
+            <p class="rd-date" id="rdLiveDate">@Model.GeneratedAt.ToString("dddd, d. MMMM yyyy", culture) · @Model.GeneratedAt.ToString("HH:mm")</p>
+        </div>
+        <div class="rd-header-actions">
+            <button class="rd-btn-icon d-lg-none" id="sidebarToggle" aria-label="Menü"><i class="bi bi-list"></i></button>
+            <button class="rd-btn-icon" id="themeToggle" aria-label="Theme wechseln"><i class="bi bi-moon-stars"></i></button>
+            <form asp-controller="Account" asp-action="Logout" method="post" class="rd-logout-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="rd-btn-icon" aria-label="Abmelden" title="Abmelden"><i class="bi bi-box-arrow-right"></i></button>
+            </form>
+        </div>
+    </header>
+
+    <!-- NEU: Cockpit Hero -->
+    <section class="rd-section" id="cockpit">
+        <div class="rd-command-hero">
+            <div class="rd-weather-hero rd-glass">
+                <div class="rd-weather-hero-top">
+                    <div>
+                        <div class="rd-weather-location"><i class="bi bi-geo-alt-fill"></i> @w.Location</div>
+                        <div class="rd-weather-condition">@w.Description</div>
+                    </div>
+                    <i class="bi @w.Icon rd-weather-icon"></i>
+                </div>
+                <div class="rd-weather-temp">@w.TemperatureC.ToString("N0")°</div>
+                @if (todayForecast is not null)
+                {
+                    <div class="rd-weather-today-range">
+                        H @todayForecast.HighC.ToString("N0")° · T @todayForecast.LowC.ToString("N0")°
+                        · Regen @todayForecast.RainProbabilityPercent %
+                    </div>
+                }
+                <div class="rd-weather-forecast">
+                    @foreach (var day in w.Forecast)
+                    {
+                        <div class="rd-weather-day-card">
+                            <span class="rd-weather-label">@day.DayLabel</span>
+                            <i class="bi @day.Icon"></i>
+                            <span class="rd-weather-temp-hi">@day.HighC.ToString("N0")°</span>
+                            <span class="rd-weather-temp-lo">@day.LowC.ToString("N0")°</span>
+                            <span class="rd-weather-rain">@day.RainProbabilityPercent %</span>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="rd-status-grid">
+                @foreach (var card in Model.QuickStatus)
+                {
+                    <div class="rd-status-card rd-glass">
+                        <span class="rd-status-emoji">@card.Emoji</span>
+                        <span class="rd-status-label">@card.Label</span>
+                        <span class="rd-status-value @(card.IsPositive == true ? "positive" : card.IsPositive == false ? "negative" : "")">@card.Value</span>
+                        <span class="rd-status-sub">@card.Subtext</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- NEU: Heute wichtig -->
+    <section class="rd-section" id="heute">
+        <h2 class="rd-section-title"><i class="bi bi-lightning-charge-fill"></i> Heute wichtig</h2>
+        <div class="rd-today-grid">
+            @foreach (var item in Model.TodayImportant)
+            {
+                <a href="/dashboard/event/@item.Id" class="rd-today-card rd-glass">
+                    <div class="rd-today-top">
+                        <span class="rd-today-emoji">@item.Emoji</span>
+                        <span class="rd-today-cat">@item.Category</span>
+                    </div>
+                    <h3 class="rd-today-title">@item.Title</h3>
+                    <p class="rd-today-summary">@item.Summary</p>
+                    <span class="rd-today-more">Details <i class="bi bi-arrow-right"></i></span>
+                </a>
+            }
+        </div>
+    </section>
+
+    <!-- Top 5 -->
+    <section class="rd-section" id="top5">
+        <h2 class="rd-section-title"><i class="bi bi-lightning-fill"></i> Die 5 wichtigsten Themen heute</h2>
+        <p class="rd-section-sub">Börse · Wirtschaft · Politik · Tech · Formel 1</p>
+        <div class="rd-top5-list">
+            @foreach (var ev in Model.TopEvents)
+            {
+                <article class="rd-top5-card">
+                    <div class="rd-top5-rank">@ev.Rank</div>
+                    <div class="rd-top5-body">
+                        <span class="rd-top5-cat">@ev.Category</span>
+                        <h3 class="rd-top5-title">@ev.Title</h3>
+                        <p class="rd-top5-summary">@ev.Summary</p>
+                        <div class="rd-top5-why"><strong>Warum wichtig?</strong> @ev.WhyImportant</div>
+                        @if (!string.IsNullOrEmpty(ev.SourceUrl))
+                        {
+                            <a href="@ev.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Mehr erfahren <i class="bi bi-arrow-up-right"></i></a>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <!-- Aktie des Tages -->
+    <section class="rd-section" id="aktie">
+        <h2 class="rd-section-title"><i class="bi bi-briefcase-fill"></i> Aktie des Tages</h2>
+        @{ var stock = Model.StockOfTheDay; }
+        <div class="rd-stock-card">
+            <div class="rd-stock-header">
+                <div>
+                    <div class="rd-stock-symbol">@stock.Symbol</div>
+                    <h3 class="rd-stock-name">@stock.Name</h3>
+                </div>
+                <div class="text-end">
+                    <div class="rd-stock-price">@stock.Price.ToString("N2", culture) USD</div>
+                    <span class="rd-change @(stock.ChangePercent >= 0 ? "positive" : "negative")">@(stock.ChangePercent >= 0 ? "+" : "")@stock.ChangePercent.ToString("N2")%</span>
+                </div>
+            </div>
+            <div class="rd-stock-grid">
+                <div class="rd-stock-block"><div class="rd-stock-label">Was macht die Firma?</div><p>@stock.WhatTheyDo</p></div>
+                <div class="rd-stock-block"><div class="rd-stock-label">Warum relevant?</div><p>@stock.WhyRelevant</p></div>
+                <div class="rd-stock-block"><div class="rd-stock-label">Warum sprechen Investoren darüber?</div><p>@stock.WhyInvestorsTalk</p></div>
+                <div class="rd-stock-block rd-stock-opportunity"><div class="rd-stock-label">Chancen</div><p>@stock.Opportunities</p></div>
+                <div class="rd-stock-block rd-stock-risk"><div class="rd-stock-label">Risiken</div><p>@stock.Risks</p></div>
+            </div>
+            <div class="rd-stock-ratings">
+                @foreach (var r in new[] { stock.Growth, stock.Risk, stock.Stability })
+                {
+                    <div class="rd-rating">
+                        <span class="rd-rating-label">@r.Label</span>
+                        <div class="rd-rating-dots">@for (var i = 1; i <= r.MaxScore; i++) { <span class="rd-rating-dot @(i <= r.Score ? "filled" : "")"></span> }</div>
+                    </div>
+                }
+            </div>
+            @if (stock.BeginnerFriendly) { <span class="rd-stock-badge"><i class="bi bi-mortarboard"></i> Für Anfänger geeignet</span> }
+            @if (!string.IsNullOrEmpty(stock.SourceUrl))
+            {
+                <a href="@stock.SourceUrl" target="_blank" rel="noopener" class="rd-source-link mt-2 d-inline-flex">Investor Relations <i class="bi bi-arrow-up-right"></i></a>
+            }
+        </div>
+    </section>
+
+    <!-- Unternehmen des Tages -->
+    <section class="rd-section" id="unternehmen">
+        <h2 class="rd-section-title"><i class="bi bi-building"></i> Unternehmen des Tages</h2>
+        @{ var co = Model.CompanyOfTheDay; }
+        <div class="rd-company-card">
+            <span class="rd-region-badge">@co.Industry</span>
+            <h3 class="rd-company-name">@co.Name</h3>
+            <p class="rd-company-tagline">@co.Tagline</p>
+            @if (!string.IsNullOrEmpty(co.Valuation))
+            {
+                <div class="rd-valuation">Bewertung: <strong>@co.Valuation</strong></div>
+            }
+            <p>@co.WhatTheyDo</p>
+            <div class="rd-top5-why"><strong>Warum interessant?</strong> @co.WhyInteresting</div>
+            @if (!string.IsNullOrEmpty(co.SourceUrl))
+            {
+                <a href="@co.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Website besuchen <i class="bi bi-arrow-up-right"></i></a>
+            }
+        </div>
+    </section>
+
+    <!-- Begriff des Tages -->
+    <section class="rd-section" id="begriff">
+        <h2 class="rd-section-title"><i class="bi bi-book"></i> Begriff des Tages</h2>
+        @{ var learn = Model.DailyLearn; }
+        <div class="rd-daily-learn">
+            <h3 class="rd-daily-learn-term">@learn.Term</h3>
+            <p>@learn.Explanation</p>
+            <div class="rd-daily-learn-why"><strong>Warum wichtig?</strong> @learn.WhyImportant</div>
+            <div class="rd-daily-learn-example"><strong>Praxisbeispiel:</strong> @learn.Example</div>
+            <span class="rd-read-time"><i class="bi bi-clock"></i> @learn.ReadSeconds Sek. Lesezeit</span>
+        </div>
+    </section>
+
+    <!-- Unternehmer-News -->
+    <section class="rd-section" id="unternehmer">
+        <h2 class="rd-section-title"><i class="bi bi-rocket-takeoff"></i> Unternehmer-News</h2>
+        <p class="rd-section-sub">Übernahmen · Finanzierungen · AI · Startups</p>
+        <div class="row g-3">
+            @foreach (var news in Model.EntrepreneurNews)
+            {
+                <div class="col-lg-6">
+                    <div class="rd-card rd-curated-card h-100">
+                        <span class="rd-region-badge">@news.Category</span>
+                        <div class="rd-news-title">@news.Title</div>
+                        <p>@news.Summary</p>
+                        <div class="rd-top5-why"><strong>Warum wichtig?</strong> @news.WhyImportant</div>
+                        @if (!string.IsNullOrEmpty(news.SourceUrl))
+                        {
+                            <a href="@news.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Quelle <i class="bi bi-arrow-up-right"></i></a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Dev & Web -->
+    <section class="rd-section" id="devtech">
+        <h2 class="rd-section-title"><i class="bi bi-code-slash"></i> Dev, Web & Tools</h2>
+        <p class="rd-section-sub">Was neu ist – relevant für Programmierung und Webentwicklung</p>
+        <div class="row g-3">
+            @foreach (var item in Model.DevTech)
+            {
+                <div class="col-lg-6">
+                    <div class="rd-card rd-curated-card h-100">
+                        <span class="rd-region-badge">@item.Category</span>
+                        <div class="rd-news-title">@item.Title</div>
+                        <p>@item.Summary</p>
+                        <div class="rd-curated-block"><div class="rd-curated-label">Für Entwickler</div><p>@item.WhyForDevs</p></div>
+                        @if (!string.IsNullOrEmpty(item.ProductPick))
+                        {
+                            <div class="rd-dev-product"><i class="bi bi-star-fill"></i> Empfehlung: <strong>@item.ProductPick</strong></div>
+                        }
+                        @if (!string.IsNullOrEmpty(item.SourceUrl))
+                        {
+                            <a href="@item.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Details <i class="bi bi-arrow-up-right"></i></a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Schnellzugriff -->
+    <section class="rd-section" id="shortcuts">
+        <h2 class="rd-section-title"><i class="bi bi-grid-fill"></i> Schnellzugriff</h2>
+        <div class="rd-shortcuts-grid">
+            @foreach (var link in Model.QuickLinks)
+            {
+                <a href="@link.Url" target="_blank" rel="noopener" class="rd-shortcut" style="--shortcut-color:@link.Color">
+                    <i class="bi @link.Icon"></i><span>@link.Name</span>
+                </a>
+            }
+        </div>
+    </section>
+
+    <!-- Wochenüberblick -->
+    <section class="rd-section" id="woche">
+        <h2 class="rd-section-title"><i class="bi bi-calendar-week"></i> Wochenüberblick</h2>
+        @{ var week = Model.WeekOverview; }
+        <div class="rd-week-card">
+            <div class="rd-week-insights">
+                <div class="rd-week-insight"><i class="bi bi-cloud-sun"></i> <strong>Wetter:</strong> @week.WeatherTrend</div>
+                <div class="rd-week-insight"><i class="bi bi-speedometer2"></i> <strong>F1:</strong> @week.F1Summary</div>
+            </div>
+            <div class="rd-week-timeline">
+                @foreach (var ev in week.Events)
+                {
+                    <div class="rd-week-event">
+                        <div class="rd-week-day">@ev.DayLabel</div>
+                        <div class="rd-week-date">@ev.DateLabel</div>
+                        <div class="rd-week-event-body">
+                            <i class="bi @ev.Icon"></i>
+                            <div>
+                                <span class="rd-week-cat">@ev.Category</span>
+                                <div class="rd-week-title">@ev.Title</div>
+                                @if (!string.IsNullOrEmpty(ev.SourceUrl))
+                                {
+                                    <a href="@ev.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Details</a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <div class="rd-lazy-sections">
+        <!-- Märkte -->
+        <section class="rd-section rd-lazy-block" id="maerkte">
+            <h2 class="rd-section-title"><i class="bi bi-graph-up-arrow"></i> Märkte</h2>
+            <div class="rd-market-grid mb-4">
+                @foreach (var q in Model.MarketQuotes.Take(6))
+                {
+                    var up = q.ChangeTodayPercent >= 0;
+                    <div class="rd-card rd-market-card">
+                        <div class="rd-market-name">@q.Name</div>
+                        <div class="rd-market-price">@q.Price.ToString("N2", culture)</div>
+                        <span class="rd-change @(up ? "positive" : "negative")"><i class="bi bi-@(up ? "arrow-up" : "arrow-down")"></i> @q.ChangeTodayPercent.ToString("N2")%</span>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Politik -->
+        <section class="rd-section rd-lazy-block" id="politik">
+            <h2 class="rd-section-title"><i class="bi bi-bank"></i> Politik & Wirtschaft</h2>
+            <div class="row g-3">
+                @foreach (var news in Model.PoliticsNews)
+                {
+                    <div class="col-lg-6">
+                        <div class="rd-card rd-curated-card h-100">
+                            <span class="rd-region-badge">@news.Region</span>
+                            <div class="rd-news-title">@news.Title</div>
+                            <div class="rd-curated-block"><div class="rd-curated-label">Was ist passiert?</div><p>@news.Summary</p></div>
+                            <div class="rd-curated-block rd-curated-why"><div class="rd-curated-label">Warum wichtig?</div><ul class="rd-impact-list">@foreach (var i in news.EconomicImpact) { <li>@i</li> }</ul></div>
+                            @if (!string.IsNullOrEmpty(news.SourceUrl)) { <a href="@news.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Quelle <i class="bi bi-arrow-up-right"></i></a> }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- AI & Tech News -->
+        <section class="rd-section rd-lazy-block" id="tech">
+            <h2 class="rd-section-title"><i class="bi bi-cpu"></i> AI & Tech News</h2>
+            <div class="row g-3">
+                @foreach (var news in Model.TechNews)
+                {
+                    <div class="col-lg-6">
+                        <div class="rd-card rd-curated-card h-100">
+                            @if (!string.IsNullOrEmpty(news.Topic)) { <span class="rd-region-badge">@news.Topic</span> }
+                            <div class="rd-news-title">@news.Title</div>
+                            <div class="rd-curated-block"><div class="rd-curated-label">Was ist passiert?</div><p>@news.Summary</p></div>
+                            <div class="rd-curated-block"><div class="rd-curated-label">Für Entwickler</div><p>@news.DeveloperRelevance</p></div>
+                            <div class="rd-curated-block rd-curated-business"><div class="rd-curated-label">Für Unternehmen</div><p>@news.EntrepreneurRelevance</p></div>
+                            @if (!string.IsNullOrEmpty(news.SourceUrl)) { <a href="@news.SourceUrl" target="_blank" rel="noopener" class="rd-source-link">Quelle <i class="bi bi-arrow-up-right"></i></a> }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+
+    <!-- F1: Lazy Load -->
+    <div id="f1-lazy-container">
+        <section class="rd-section" id="f1">
+            <div class="rd-skeleton">
+                <div class="rd-skeleton-line wide"></div>
+                <div class="rd-skeleton-line"></div>
+                <p class="rd-section-sub mb-0">Formula 1 Center wird geladen…</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Lernen -->
+    <section class="rd-section" id="investieren">
+        <h2 class="rd-section-title"><i class="bi bi-mortarboard"></i> Investieren lernen</h2>
+        <div class="rd-glossary-tags">
+            @foreach (var term in Model.GlossaryTerms)
+            {
+                <button type="button" class="rd-glossary-tag" data-slug="@term.Slug">@term.Term</button>
+            }
+        </div>
+    </section>
+</main>
+
+<div class="rd-modal-overlay" id="glossaryModal">
+    <div class="rd-modal">
+        <button class="rd-modal-close">&times;</button>
+        <h3 class="rd-modal-title"></h3>
+        <div class="rd-modal-body"></div>
+    </div>
+</div>

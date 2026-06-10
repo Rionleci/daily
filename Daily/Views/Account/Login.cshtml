@@ -1,0 +1,67 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Anmelden";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anmelden – Rion Daily</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/rion-daily.css" asp-append-version="true" />
+</head>
+<body class="rd-body rd-login-body">
+    <div class="rd-login-page">
+        <div class="rd-login-card rd-glass">
+            <div class="rd-login-brand">
+                <div class="rd-logo-icon">RD</div>
+                <h1>Rion Daily</h1>
+                <p>Dein persönliches Morgen-Cockpit</p>
+            </div>
+
+            <form asp-action="Login" method="post" class="rd-login-form">
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div asp-validation-summary="ModelOnly" class="rd-login-error"></div>
+
+                <div class="rd-login-field">
+                    <label asp-for="Username"></label>
+                    <div class="rd-login-input-wrap">
+                        <i class="bi bi-person"></i>
+                        <input asp-for="Username" autocomplete="username" placeholder="Benutzername" />
+                    </div>
+                    <span asp-validation-for="Username" class="rd-field-error"></span>
+                </div>
+
+                <div class="rd-login-field">
+                    <label asp-for="Password"></label>
+                    <div class="rd-login-input-wrap">
+                        <i class="bi bi-lock"></i>
+                        <input asp-for="Password" autocomplete="current-password" placeholder="Passwort" />
+                    </div>
+                    <span asp-validation-for="Password" class="rd-field-error"></span>
+                </div>
+
+                <label class="rd-login-remember">
+                    <input asp-for="RememberMe" type="checkbox" />
+                    <span>Angemeldet bleiben</span>
+                </label>
+
+                <button type="submit" class="rd-btn-primary rd-login-submit">
+                    Anmelden <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

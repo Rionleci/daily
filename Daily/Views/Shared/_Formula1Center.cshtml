@@ -1,0 +1,369 @@
+@model Formula1CenterData
+@using System.Text.Json
+@using Daily.DataLayer.Services
+@{
+    var culture = new System.Globalization.CultureInfo("de-CH");
+    var pastRaceJson = JsonSerializer.Serialize(Model.PastRaces.Select(r => new
+    {
+        r.Round,
+        r.RaceName,
+        r.ShortName,
+        r.CircuitName,
+        r.Country,
+        r.DateDisplay,
+        r.Winner,
+        r.PolePosition,
+        r.FastestLap,
+        Podium = r.Podium ?? Array.Empty<string>(),
+        Highlights = r.Highlights ?? Array.Empty<string>(),
+        CircuitImageUrl = F1MediaHelper.ProxyImage(r.CircuitImageUrl, r.CircuitId, r.CircuitName)
+    }));
+}
+
+<section class="rd-section f1-center" id="f1">
+    <div class="f1-center-header">
+        <h2 class="rd-section-title"><i class="bi bi-speedometer2"></i> Formula 1 Center</h2>
+        @if (string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <span class="f1-live-badge"><span class="f1-live-dot"></span> Live · @Model.FetchedAt.ToLocalTime().ToString("HH:mm")</span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="rd-card" style="border-color:#dc2626;background:#fef2f2;padding:1.25rem">
+            <strong>Daten konnten nicht geladen werden.</strong>
+            <p class="mb-0 mt-1" style="font-size:.9rem;color:#991b1b">@Model.ErrorMessage</p>
+        </div>
+    }
+
+    @if (Model.Hero is not null)
+    {
+        var h = Model.Hero;
+        var heroCircuit = F1MediaHelper.ProxyImage(h.CircuitImageUrl, null, h.CircuitName);
+        <div class="f1-hero">
+            <div class="f1-hero-overlay"></div>
+            <div class="f1-hero-content">
+                <div class="f1-hero-left">
+                    <div class="f1-hero-label">Nächstes Rennen</div>
+                    <h3 class="f1-hero-title">@h.RaceName</h3>
+                    <p class="f1-hero-circuit"><i class="bi bi-geo-alt"></i> @h.CircuitName</p>
+                    <p class="f1-hero-country">
+                        @if (!string.IsNullOrEmpty(h.CountryFlagUrl))
+                        {
+                            <img src="@F1MediaHelper.ProxyImage(h.CountryFlagUrl)" alt="@h.Country" class="f1-country-flag" loading="lazy" />
+                        }
+                        @h.Country@h.FlagEmoji
+                    </p>
+                    <div class="f1-hero-countdown" id="f1Countdown" data-seconds="@h.CountdownSeconds">--</div>
+                    <div class="f1-hero-meta">
+                        <div class="f1-meta-item">
+                            <span class="f1-meta-label">Datum</span>
+                            <span class="f1-meta-value">@h.RaceDateTime.ToLocalTime().ToString("ddd, d. MMM · HH:mm", culture)</span>
+                        </div>
+                        <div class="f1-meta-item">
+                            <span class="f1-meta-label">Strecke</span>
+                            <span class="f1-meta-value">@h.TrackLengthKm.ToString("N3", culture) km</span>
+                        </div>
+                        <div class="f1-meta-item">
+                            <span class="f1-meta-label">Runden</span>
+                            <span class="f1-meta-value">@h.Laps</span>
+                        </div>
+                        <div class="f1-meta-item">
+                            <span class="f1-meta-label">Distanz</span>
+                            <span class="f1-meta-value">@h.TotalDistanceKm.ToString("N1", culture) km</span>
+                        </div>
+                        <div class="f1-meta-item">
+                            <span class="f1-meta-label">Wetter</span>
+                            <span class="f1-meta-value"><i class="bi bi-sun"></i> @h.TemperatureC.ToString("N0")°C @h.WeatherDescription</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="f1-hero-right">
+                    @if (!string.IsNullOrEmpty(heroCircuit))
+                    {
+                        <div class="f1-circuit-showcase">
+                            <img src="@heroCircuit" alt="Strecke @h.CircuitName" class="f1-circuit-official" loading="lazy" />
+                            <div class="f1-circuit-showcase-label">@h.CircuitName</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.SeasonInfo is not null && (Model.UpcomingRaces.Any() || Model.PastRaces.Any()))
+    {
+        var si = Model.SeasonInfo;
+        <div class="f1-block f1-calendar-block">
+            <button type="button" class="f1-calendar-toggle" id="f1CalendarToggle" aria-expanded="false">
+                <div class="f1-calendar-toggle-left">
+                    <span class="f1-calendar-toggle-title">📅 Saison @si.Season</span>
+                    <span class="f1-season-badge">Runde @si.CurrentRound / @si.TotalRounds · @si.RacesRemaining Rennen übrig · @Model.UpcomingRaces.Count kommend</span>
+                </div>
+                <i class="bi bi-chevron-down f1-calendar-chevron"></i>
+            </button>
+
+            <div class="f1-calendar-body" id="f1CalendarBody">
+                @if (Model.UpcomingRaces.Any())
+                {
+                    <div class="f1-calendar-section">
+                        <div class="f1-calendar-label">Kommende Rennen (@Model.UpcomingRaces.Count)</div>
+                        <div class="f1-calendar-row">
+                            @foreach (var race in Model.UpcomingRaces)
+                            {
+                                var circuitImg = F1MediaHelper.ProxyImage(race.CircuitImageUrl, race.CircuitId, race.CircuitName);
+                                <div class="f1-cal-card f1-cal-upcoming">
+                                    @if (!string.IsNullOrEmpty(circuitImg))
+                                    {
+                                        <div class="f1-cal-circuit-wrap">
+                                            <img src="@circuitImg" alt="@race.CircuitName" class="f1-cal-circuit" loading="lazy" />
+                                        </div>
+                                    }
+                                    <div class="f1-cal-round">R@(race.Round)</div>
+                                    <div class="f1-cal-name">@race.ShortName</div>
+                                    <div class="f1-cal-meta">
+                                        @if (!string.IsNullOrEmpty(race.CountryFlagUrl))
+                                        {
+                                            <img src="@F1MediaHelper.ProxyImage(race.CountryFlagUrl)" alt="@race.Country" class="f1-country-flag" loading="lazy" />
+                                        }
+                                        @race.Country
+                                    </div>
+                                    <div class="f1-cal-date">@race.DateDisplay</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.PastRaces.Any())
+                {
+                    <div class="f1-calendar-section">
+                        <div class="f1-calendar-label">Vergangene Rennen</div>
+                        <div class="f1-calendar-row">
+                            @foreach (var race in Model.PastRaces)
+                            {
+                                var circuitImg = F1MediaHelper.ProxyImage(race.CircuitImageUrl, race.CircuitId, race.CircuitName);
+                                <button type="button" class="f1-cal-card f1-cal-past" data-round="@race.Round">
+                                    @if (!string.IsNullOrEmpty(circuitImg))
+                                    {
+                                        <div class="f1-cal-circuit-wrap">
+                                            <img src="@circuitImg" alt="@race.CircuitName" class="f1-cal-circuit" loading="lazy" />
+                                        </div>
+                                    }
+                                    <div class="f1-cal-round">R@(race.Round)</div>
+                                    <div class="f1-cal-name">@race.ShortName</div>
+                                    <div class="f1-cal-winner"><i class="bi bi-trophy-fill"></i> @(race.Winner ?? "–")</div>
+                                    <div class="f1-cal-date">@race.DateDisplay</div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Model.TitleFight is not null)
+    {
+        var tf = Model.TitleFight;
+        <div class="f1-block">
+            <h3 class="f1-block-title">🏆 Weltmeisterschaftskampf</h3>
+            <div class="f1-title-fight">
+                <div class="f1-fight-driver f1-fight-leader">
+                    <div class="f1-fight-pos">1</div>
+                    <div class="f1-fight-info">
+                        <div class="f1-fight-name">@tf.Leader.DriverName</div>
+                        <div class="f1-fight-team" style="color:@tf.Leader.TeamColor">@tf.Leader.Team</div>
+                        <div class="f1-fight-bar"><div class="f1-fight-bar-fill" style="width:@(tf.Leader.BarPercent.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))%;background:@tf.Leader.TeamColor"></div></div>
+                        <div class="f1-fight-points">@tf.Leader.Points <small>Punkte</small> · +@tf.Leader.PointsGainedLast3 in 3 Rennen</div>
+                        <div class="f1-form-dots">@foreach (var c in tf.Leader.Form) { <span class="rd-form-dot @(c=='W'?"w":c=='P'?"p":"l")"></span> }</div>
+                    </div>
+                </div>
+                <div class="f1-fight-gap">
+                    <div class="f1-gap-value">@tf.PointsGap</div>
+                    <div class="f1-gap-label">Punkte Abstand</div>
+                </div>
+                <div class="f1-fight-driver">
+                    <div class="f1-fight-pos">2</div>
+                    <div class="f1-fight-info">
+                        <div class="f1-fight-name">@tf.Challenger.DriverName</div>
+                        <div class="f1-fight-team" style="color:@tf.Challenger.TeamColor">@tf.Challenger.Team</div>
+                        <div class="f1-fight-bar"><div class="f1-fight-bar-fill" style="width:@(tf.Challenger.BarPercent.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))%;background:@tf.Challenger.TeamColor"></div></div>
+                        <div class="f1-fight-points">@tf.Challenger.Points <small>Punkte</small> · +@tf.Challenger.PointsGainedLast3 in 3 Rennen</div>
+                        <div class="f1-form-dots">@foreach (var c in tf.Challenger.Form) { <span class="rd-form-dot @(c=='W'?"w":c=='P'?"p":"l")"></span> }</div>
+                    </div>
+                </div>
+            </div>
+            <div class="f1-momentum">
+                <i class="bi bi-lightning-charge"></i> <strong>Momentum:</strong> @tf.MomentumSummary
+            </div>
+        </div>
+    }
+
+    <div class="f1-block">
+        <h3 class="f1-block-title">Teams</h3>
+        <div class="f1-teams-layout">
+            <div class="f1-teams-cards">
+                <div class="f1-teams-grid" id="f1TeamsGrid">
+                    @for (var i = 0; i < Model.Teams.Count; i++)
+                    {
+                        var team = Model.Teams[i];
+                        <div class="f1-team-card @(i >= 4 ? "f1-team-hidden" : "")" style="--team-color:@team.TeamColor">
+                            <img src="@team.LogoUrl" alt="@team.TeamName" class="f1-team-logo" loading="lazy" />
+                            <div class="f1-team-name">@team.TeamName</div>
+                            <div class="f1-team-points">@team.Points <span>Punkte</span></div>
+                            <div class="f1-team-wins">@team.Wins Siege</div>
+                        </div>
+                    }
+                </div>
+                @if (Model.Teams.Count > 4)
+                {
+                    <button type="button" class="f1-expand-btn" id="f1ExpandTeams">
+                        <i class="bi bi-chevron-down"></i> Alle Teams anzeigen (@Model.Teams.Count)
+                    </button>
+                }
+            </div>
+            <div class="f1-teams-table-wrap">
+                <table class="f1-teams-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th>Pkt</th>
+                            <th>Siege</th>
+                            @if (Model.SeasonInfo is not null)
+                            {
+                                <th>Übrig</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var team in Model.Teams)
+                        {
+                            <tr>
+                                <td class="f1-tbl-pos">@team.Position</td>
+                                <td>
+                                    <span class="f1-tbl-team">
+                                        <span class="f1-tbl-dot" style="background:@team.TeamColor"></span>
+                                        @team.TeamName
+                                    </span>
+                                </td>
+                                <td class="f1-tbl-num">@team.Points</td>
+                                <td class="f1-tbl-num">@team.Wins</td>
+                                @if (Model.SeasonInfo is not null)
+                                {
+                                    <td class="f1-tbl-num">@Model.SeasonInfo.RacesRemaining</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="f1-block">
+        <h3 class="f1-block-title">Fahrer</h3>
+        <div class="f1-drivers-grid" id="f1DriversGrid">
+            @for (var i = 0; i < Model.Drivers.Count; i++)
+            {
+                var d = Model.Drivers[i];
+                <div class="f1-driver-card @(i >= 4 ? "f1-driver-hidden" : "")" style="--team-color:@d.TeamColor">
+                    @if (!string.IsNullOrEmpty(d.PortraitUrl))
+                    {
+                        <img src="@d.PortraitUrl" alt="@d.DriverName" class="f1-driver-portrait" loading="lazy"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                        <div class="f1-driver-portrait f1-driver-fallback" style="display:none;background:@d.TeamColor">@d.DriverCode</div>
+                    }
+                    else
+                    {
+                        <div class="f1-driver-portrait f1-driver-fallback" style="background:@d.TeamColor">@d.DriverCode</div>
+                    }
+                    <div class="f1-driver-pos">P@(d.Position)</div>
+                    <div class="f1-driver-name">@d.DriverName</div>
+                    <div class="f1-driver-team">@d.Team</div>
+                    <div class="f1-driver-stats-row">
+                        <div><strong>@d.Points</strong><small>Pkt</small></div>
+                        <div><strong>@d.Wins</strong><small>Siege</small></div>
+                        <div><strong>@d.Podiums</strong><small>Podien</small></div>
+                    </div>
+                    <div class="f1-form-dots justify-content-center">@foreach (var c in d.Form) { <span class="rd-form-dot @(c=='W'?"w":c=='P'?"p":"l")"></span> }</div>
+                    @if (d.LastResults.Any())
+                    {
+                        <div class="f1-driver-last">
+                            @string.Join(" · ", d.LastResults.TakeLast(3))
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        @if (Model.Drivers.Count > 4)
+        {
+            <button type="button" class="f1-expand-btn" id="f1ExpandDrivers">
+                <i class="bi bi-chevron-down"></i> Alle Fahrer anzeigen (@Model.Drivers.Count)
+            </button>
+        }
+    </div>
+
+    <div class="f1-block f1-news-block">
+        <h3 class="f1-block-title">📰 Formel 1 News</h3>
+        @foreach (var story in Model.News)
+        {
+            <article class="f1-story @(story.IsTopStory ? "f1-story-top" : "")"
+                     data-title="@story.Title"
+                     data-summary="@story.Summary"
+                     data-why="@story.WhyImportant"
+                     data-impact="@story.ChampionshipImpact"
+                     data-benefits="@story.WhoBenefits">
+                <div class="f1-story-header">
+                    @if (story.IsTopStory) { <div class="f1-story-badge">🔥 Wichtigste Story</div> }
+                    <button type="button" class="f1-translate-btn" title="Auf Deutsch übersetzen">
+                        <i class="bi bi-translate"></i> DE
+                    </button>
+                </div>
+                <h4 class="f1-story-title">@story.Title</h4>
+                <div class="f1-story-section">
+                    <div class="f1-story-label">Zusammenfassung</div>
+                    <p class="f1-story-text" data-field="summary">@story.Summary</p>
+                </div>
+                <div class="f1-story-section f1-story-why">
+                    <div class="f1-story-label">Warum ist das wichtig?</div>
+                    <p class="f1-story-text" data-field="why">@story.WhyImportant</p>
+                </div>
+                <div class="f1-story-grid">
+                    <div class="f1-story-section">
+                        <div class="f1-story-label">WM-Auswirkung</div>
+                        <p class="f1-story-text" data-field="impact">@story.ChampionshipImpact</p>
+                    </div>
+                    <div class="f1-story-section">
+                        <div class="f1-story-label">Wer profitiert?</div>
+                        <p class="f1-story-text" data-field="benefits">@story.WhoBenefits</p>
+                    </div>
+                    <div class="f1-story-section">
+                        <div class="f1-story-label">Einfluss</div>
+                        <p class="f1-impact-level">@story.ImpactLevel</p>
+                    </div>
+                </div>
+                <div class="f1-story-translation hidden">
+                    <div class="f1-story-label">🇩🇪 Deutsche Übersetzung</div>
+                    <div class="f1-translation-content"></div>
+                </div>
+                @if (!string.IsNullOrEmpty(story.SourceUrl))
+                {
+                    <a href="@story.SourceUrl" target="_blank" rel="noopener" class="f1-story-link">Quelle lesen <i class="bi bi-arrow-up-right"></i></a>
+                }
+            </article>
+        }
+    </div>
+</section>
+
+<div class="rd-modal-overlay" id="f1RaceModal">
+    <div class="rd-modal f1-race-modal">
+        <button class="rd-modal-close">&times;</button>
+        <h3 class="rd-modal-title"></h3>
+        <div class="rd-modal-body"></div>
+    </div>
+</div>
+
+<script type="application/json" id="f1PastRacesData">@Html.Raw(pastRaceJson)</script>

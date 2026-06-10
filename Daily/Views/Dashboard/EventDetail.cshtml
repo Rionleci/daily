@@ -1,0 +1,34 @@
+@model EventDetailViewModel
+@{
+    ViewData["Title"] = Model.Event.Title;
+    var ev = Model.Event;
+}
+
+<main class="rd-main rd-command rd-detail-page">
+    <header class="rd-header">
+        <div>
+            <a href="/" class="rd-back-link"><i class="bi bi-arrow-left"></i> Zurück zum Cockpit</a>
+            <h1 class="rd-greeting rd-detail-title">@ev.Emoji @ev.Title</h1>
+            <p class="rd-date"><span class="rd-region-badge">@ev.Category</span></p>
+        </div>
+    </header>
+
+    <section class="rd-section">
+        <div class="rd-detail-card rd-glass">
+            <p class="rd-detail-summary">@ev.DetailBody</p>
+            @if (!string.IsNullOrEmpty(ev.WhyImportant))
+            {
+                <div class="rd-detail-why">
+                    <strong>Warum wichtig?</strong>
+                    <p>@ev.WhyImportant</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(ev.SourceUrl))
+            {
+                <a href="@ev.SourceUrl" target="_blank" rel="noopener" class="rd-btn-primary rd-detail-source">
+                    Quelle lesen <i class="bi bi-arrow-up-right"></i>
+                </a>
+            }
+        </div>
+    </section>
+</main>
